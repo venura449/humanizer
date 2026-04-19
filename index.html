@@ -1,0 +1,663 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Humanizer</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Mono:wght@400;500&display=swap");
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --ink: #1a1814;
+        --ink-muted: #6b6660;
+        --ink-faint: #b8b3ad;
+        --paper: #faf8f4;
+        --paper-warm: #f3efe8;
+        --paper-card: #ffffff;
+        --accent: #c4622d;
+        --accent-light: #f5e8e0;
+        --border: #e0dbd4;
+        --border-strong: #c8c2ba;
+        --success: #3a7d44;
+        --success-bg: #edf5ef;
+        --radius: 10px;
+        --radius-lg: 16px;
+      }
+
+      body {
+        font-family: "Lora", Georgia, serif;
+        background: var(--paper);
+        color: var(--ink);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      header {
+        border-bottom: 1px solid var(--border);
+        padding: 1.2rem 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--paper-card);
+      }
+
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .logo-icon {
+        width: 34px;
+        height: 34px;
+        background: var(--accent);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+      }
+
+      .logo-text {
+        font-size: 18px;
+        font-weight: 600;
+        letter-spacing: -0.3px;
+        color: var(--ink);
+      }
+
+      .logo-text span {
+        color: var(--accent);
+      }
+
+      .badges {
+        display: flex;
+        gap: 8px;
+      }
+
+      .badge {
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        border: 1px solid var(--border-strong);
+        color: var(--ink-muted);
+        background: var(--paper-warm);
+        cursor: pointer;
+        transition: all 0.15s;
+        white-space: nowrap;
+      }
+      .badge:hover,
+      .badge.active {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--accent-light);
+      }
+
+      main {
+        flex: 1;
+        padding: 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+        width: 100%;
+      }
+
+      .tagline {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+      .tagline h1 {
+        font-size: 26px;
+        font-weight: 600;
+        letter-spacing: -0.5px;
+        margin-bottom: 6px;
+      }
+      .tagline p {
+        font-size: 14px;
+        color: var(--ink-muted);
+        font-style: italic;
+      }
+
+      .editor-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .panel {
+        background: var(--paper-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        display: flex;
+        flex-direction: column;
+        min-height: 340px;
+        overflow: hidden;
+      }
+
+      .panel-header {
+        padding: 12px 16px 10px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .panel-label {
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--ink-muted);
+      }
+
+      .panel-actions {
+        display: flex;
+        gap: 6px;
+      }
+
+      .icon-btn {
+        background: none;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 4px 8px;
+        font-size: 12px;
+        color: var(--ink-muted);
+        cursor: pointer;
+        font-family: "DM Mono", monospace;
+        transition: all 0.15s;
+      }
+      .icon-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--accent-light);
+      }
+
+      textarea {
+        flex: 1;
+        border: none;
+        outline: none;
+        padding: 16px;
+        font-family: "Lora", Georgia, serif;
+        font-size: 14.5px;
+        line-height: 1.8;
+        color: var(--ink);
+        background: transparent;
+        resize: none;
+        min-height: 280px;
+      }
+      textarea::placeholder {
+        color: var(--ink-faint);
+        font-style: italic;
+      }
+
+      .output-body {
+        flex: 1;
+        padding: 16px;
+        font-size: 14.5px;
+        line-height: 1.8;
+        color: var(--ink);
+        overflow-y: auto;
+        min-height: 280px;
+        position: relative;
+      }
+
+      .placeholder-text {
+        color: var(--ink-faint);
+        font-style: italic;
+        font-size: 14px;
+      }
+
+      .loading-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        min-height: 220px;
+        gap: 16px;
+      }
+
+      .spinner {
+        width: 32px;
+        height: 32px;
+        border: 2.5px solid var(--border);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .loading-state p {
+        font-size: 13px;
+        color: var(--ink-muted);
+        font-style: italic;
+      }
+
+      .controls-row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .tone-select-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 1;
+        min-width: 200px;
+      }
+      .tone-select-wrap label {
+        font-family: "DM Mono", monospace;
+        font-size: 12px;
+        color: var(--ink-muted);
+        white-space: nowrap;
+      }
+      select {
+        flex: 1;
+        border: 1px solid var(--border-strong);
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-family: "Lora", serif;
+        font-size: 14px;
+        color: var(--ink);
+        background: var(--paper-card);
+        outline: none;
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b6660' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        padding-right: 30px;
+      }
+      select:focus {
+        border-color: var(--accent);
+      }
+
+      .humanize-btn {
+        padding: 10px 28px;
+        background: var(--accent);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-family: "Lora", serif;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
+        white-space: nowrap;
+        letter-spacing: -0.2px;
+      }
+      .humanize-btn:hover {
+        background: #a8521e;
+        transform: translateY(-1px);
+      }
+      .humanize-btn:active {
+        transform: translateY(0);
+      }
+      .humanize-btn:disabled {
+        background: var(--ink-faint);
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .stats-bar {
+        display: flex;
+        gap: 1.5rem;
+        margin-top: 1rem;
+        padding: 12px 16px;
+        background: var(--paper-warm);
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        flex-wrap: wrap;
+      }
+
+      .stat {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .stat-label {
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        color: var(--ink-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .stat-val {
+        font-family: "DM Mono", monospace;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--ink);
+      }
+      .stat-val.good {
+        color: var(--success);
+      }
+
+      .error-msg {
+        background: #fef2f2;
+        border: 1px solid #fca5a5;
+        border-radius: var(--radius);
+        padding: 12px 14px;
+        color: #991b1b;
+        font-size: 13px;
+        margin-top: 1rem;
+      }
+
+      .copied-toast {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        background: var(--ink);
+        color: white;
+        padding: 10px 18px;
+        border-radius: 8px;
+        font-family: "DM Mono", monospace;
+        font-size: 13px;
+        opacity: 0;
+        transform: translateY(8px);
+        transition: all 0.2s;
+        pointer-events: none;
+        z-index: 100;
+      }
+      .copied-toast.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      @media (max-width: 700px) {
+        .editor-grid {
+          grid-template-columns: 1fr;
+        }
+        main {
+          padding: 1rem;
+        }
+        header {
+          padding: 1rem;
+        }
+        .badges {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="logo">
+        <div class="logo-icon">✍️</div>
+        <div class="logo-text">Human<span>ify</span></div>
+      </div>
+      <div class="badges">
+        <div class="badge active" onclick="setMode(this, 'casual')">casual</div>
+        <div class="badge" onclick="setMode(this, 'academic')">academic</div>
+        <div class="badge" onclick="setMode(this, 'professional')">
+          professional
+        </div>
+        <div class="badge" onclick="setMode(this, 'creative')">creative</div>
+      </div>
+    </header>
+
+    <main>
+      <div class="tagline">
+        <h1>Make AI text sound human</h1>
+        <p>Bypass AI detectors. Keep your meaning, lose the machine feel.</p>
+      </div>
+
+      <div class="editor-grid">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-label">AI Text Input</span>
+            <div class="panel-actions">
+              <button class="icon-btn" onclick="pasteText()">paste</button>
+              <button class="icon-btn" onclick="clearInput()">clear</button>
+            </div>
+          </div>
+          <textarea
+            id="inputText"
+            placeholder="Paste your AI-generated text here...&#10;&#10;e.g. 'In conclusion, it is important to note that the implementation of such strategies is crucial for optimizing outcomes...'"
+          ></textarea>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-label">Humanized Output</span>
+            <div class="panel-actions">
+              <button class="icon-btn" id="copyBtn" onclick="copyOutput()">
+                copy
+              </button>
+              <button class="icon-btn" onclick="regenerate()">retry</button>
+            </div>
+          </div>
+          <div class="output-body" id="outputArea">
+            <p class="placeholder-text">
+              Your humanized text will appear here...
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls-row">
+        <div class="tone-select-wrap">
+          <label>Intensity:</label>
+          <select id="intensitySelect">
+            <option value="light">Light — subtle tweaks only</option>
+            <option value="medium" selected>Medium — natural rewrite</option>
+            <option value="heavy">Heavy — full transformation</option>
+          </select>
+        </div>
+        <div class="tone-select-wrap">
+          <label>Style:</label>
+          <select id="styleSelect">
+            <option value="casual">Casual / Conversational</option>
+            <option value="professional">Professional</option>
+            <option value="academic">Academic</option>
+            <option value="creative">Creative / Expressive</option>
+            <option value="simple">Simple / Plain English</option>
+          </select>
+        </div>
+        <button class="humanize-btn" id="humanizeBtn" onclick="humanize()">
+          ✦ Humanize
+        </button>
+      </div>
+
+      <div id="statsBar" class="stats-bar" style="display: none">
+        <div class="stat">
+          <span class="stat-label">Words in</span>
+          <span class="stat-val" id="wordsIn">—</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Words out</span>
+          <span class="stat-val" id="wordsOut">—</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">AI patterns removed</span>
+          <span class="stat-val good" id="patternsRemoved">—</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Readability</span>
+          <span class="stat-val good" id="readability">—</span>
+        </div>
+      </div>
+
+      <div id="errorMsg" class="error-msg" style="display: none"></div>
+    </main>
+
+    <div class="copied-toast" id="toast">Copied to clipboard</div>
+
+    <script src="humanizer.js"></script>
+    <script>
+      let currentMode = "casual";
+      let lastOutput = "";
+      const humanizer = new TextHumanizer();
+
+      function setMode(el, mode) {
+        currentMode = mode;
+        document
+          .querySelectorAll(".badge")
+          .forEach((b) => b.classList.remove("active"));
+        el.classList.add("active");
+        document.getElementById("styleSelect").value =
+          mode === "academic"
+            ? "academic"
+            : mode === "professional"
+              ? "professional"
+              : mode === "creative"
+                ? "creative"
+                : "casual";
+      }
+
+      function clearInput() {
+        document.getElementById("inputText").value = "";
+        document.getElementById("outputArea").innerHTML =
+          '<p class="placeholder-text">Your humanized text will appear here...</p>';
+        document.getElementById("statsBar").style.display = "none";
+        document.getElementById("errorMsg").style.display = "none";
+        lastOutput = "";
+      }
+
+      async function pasteText() {
+        try {
+          const text = await navigator.clipboard.readText();
+          document.getElementById("inputText").value = text;
+        } catch (e) {
+          document.getElementById("inputText").focus();
+        }
+      }
+
+      function copyOutput() {
+        if (!lastOutput) return;
+        navigator.clipboard.writeText(lastOutput).then(() => {
+          const t = document.getElementById("toast");
+          t.classList.add("show");
+          setTimeout(() => t.classList.remove("show"), 2000);
+        });
+      }
+
+      function regenerate() {
+        if (document.getElementById("inputText").value.trim()) humanize();
+      }
+
+      function countWords(text) {
+        return text.trim().split(/\s+/).filter(Boolean).length;
+      }
+
+      function detectAIPatterns(text) {
+        const patterns = [
+          /\bin conclusion\b/gi,
+          /\bit is important to note\b/gi,
+          /\bit is worth noting\b/gi,
+          /\bfurthermore\b/gi,
+          /\bmoreover\b/gi,
+          /\bin summary\b/gi,
+          /\bnevertheless\b/gi,
+          /\badditionally\b/gi,
+          /\bsubstantially\b/gi,
+          /\boptimizing outcomes\b/gi,
+          /\bcrucial for\b/gi,
+          /\bin today's .{0,20} world\b/gi,
+          /\bdelve into\b/gi,
+          /\bfacilitate\b/gi,
+          /\bleverage\b/gi,
+          /\butilize\b/gi,
+        ];
+        return patterns.filter((p) => p.test(text)).length;
+      }
+
+      function humanize() {
+        const input = document.getElementById("inputText").value.trim();
+        if (!input) {
+          showError("Please paste some AI-generated text first.");
+          return;
+        }
+        if (input.split(/\s+/).length < 10) {
+          showError("Please enter at least 10 words for better results.");
+          return;
+        }
+
+        const intensity = document.getElementById("intensitySelect").value;
+        const style = document.getElementById("styleSelect").value;
+
+        const btn = document.getElementById("humanizeBtn");
+        btn.disabled = true;
+        btn.textContent = "Humanizing...";
+        document.getElementById("errorMsg").style.display = "none";
+
+        const outputArea = document.getElementById("outputArea");
+        outputArea.innerHTML = `
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Rewriting to sound more human...</p>
+    </div>`;
+
+        // Simulate processing with a small delay for better UX
+        setTimeout(() => {
+          try {
+            const output = humanizer.humanize(input, intensity, style);
+
+            if (!output) throw new Error("Failed to humanize text");
+
+            lastOutput = output;
+
+            outputArea.innerHTML = `<div style="white-space: pre-wrap;">${output.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>`;
+
+            const wordsIn = countWords(input);
+            const wordsOut = countWords(output);
+            const patternsBefore = detectAIPatterns(input);
+            const patternsAfter = detectAIPatterns(output);
+            const removed = patternsBefore - patternsAfter;
+
+            const sentences = output
+              .split(/[.!?]+/)
+              .filter((s) => s.trim().length > 4);
+            const avgSentLen = sentences.map(
+              (s) => s.trim().split(/\s+/).length,
+            );
+            const variance =
+              avgSentLen.length > 1
+                ? Math.round(Math.max(...avgSentLen) - Math.min(...avgSentLen))
+                : 0;
+            const readScore =
+              variance > 8 ? "Natural" : variance > 4 ? "Good" : "Moderate";
+
+            document.getElementById("wordsIn").textContent = wordsIn;
+            document.getElementById("wordsOut").textContent = wordsOut;
+            document.getElementById("patternsRemoved").textContent =
+              removed > 0 ? `${removed} found & fixed` : "None detected";
+            document.getElementById("readability").textContent = readScore;
+            document.getElementById("statsBar").style.display = "flex";
+
+            btn.disabled = false;
+            btn.textContent = "✦ Humanize";
+          } catch (err) {
+            outputArea.innerHTML =
+              '<p class="placeholder-text">Something went wrong. Please try again.</p>';
+            showError("Error: " + (err.message || "Could not humanize text"));
+            btn.disabled = false;
+            btn.textContent = "✦ Humanize";
+          }
+        }, 800);
+      }
+
+      function showError(msg) {
+        const el = document.getElementById("errorMsg");
+        el.textContent = msg;
+        el.style.display = "block";
+      }
+    </script>
+  </body>
+</html>
